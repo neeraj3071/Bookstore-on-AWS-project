@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Shop</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Book Shop</h1>
+        <button id="add-book-button" class="add-book-button">Add Book</button>
+        <table id="books-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Cost</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="books-tbody">
+                <!-- Rows will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', fetchBooks);
+
+        // Fetch all books and display in table
+        function fetchBooks() {
+            fetch('http://localhost:8080/books')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.getElementById('books-tbody');
+                    tbody.innerHTML = ''; // Clear existing rows
+                    data.forEach(book => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${book.id}</td>
+                            <td>${book.title}</td>
+                            <td>${book.author}</td>
+                            <td>${book.cost}</td>
+                            <td>
+                                <button onclick="viewBook(${book.id})" class="button button-view">View</button>
+                                <button onclick="editBook(${book.id})" class="button button-edit">Edit</button>
+                                <button onclick="deleteBook(${book.id})" class="button button-delete">Delete</button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error fetching books:', error));
+        }
+
+        // View details of a single book
+        function viewBook(id) {
+            fetch(`http://localhost:8080/book/${id}`)
+                .then(response => response.json())
+                .then(book => {
+                    alert(`Title: ${book.title}\nAuthor: ${book.author}\nCost: ${book.cost}`);
+                })
+                .catch(error => console.error('Error fetching book details:', error));
+        }
+
+        // Edit a book's details
+        function editBook(id) {
+            const newTitle = prompt("Enter new title:");
+            const newAuthor = prompt("Enter new author:");
+            const newCost = prompt("Enter new cost:");
+
+            fetch(`http://localhost:8080/book/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ title: newTitle, author: newAuthor, cost: newCost })
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert(`Book ${id} has been updated`);
+                    fetchBooks(); // Refresh the list of books
+                } else {
+                    alert('Error updating the book');
+                }
+            })
+            .catch(error => console.error('Error updating book:', error));
+        }
+
+        // Delete a book
+        function deleteBook(id) {
+            fetch(`http://localhost:8080/book/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert(`Book ${id} has been deleted`);
+                    fetchBooks(); // Refresh the book list
+                } else {
+                    alert('Error deleting the book');
+                }
+            })
+            .catch(error => console.error('Error deleting book:', error));
+        }
+
+        // Add a new book
+        document.getElementById('add-book-button').addEventListener('click', () => {
+            const title = prompt("Enter book title:");
+            const author = prompt("Enter book author:");
+            const cost = prompt("Enter book cost:");
+
+            fetch('http://localhost:8080/books', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ title, author, cost })
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("Book has been added");
+                    fetchBooks(); // Refresh the list of books
+                } else {
+                    alert('Error adding book');
+                }
+            })
+            .catch(error => console.error('Error adding book:', error));
+        });
+    </script>
+</body>
+</html>
